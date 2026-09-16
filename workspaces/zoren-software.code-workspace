@@ -1,0 +1,28 @@
+{
+	"folders": [
+		{
+			"path": "../Projects/VoleiClub"
+		},
+		{
+			"path": "../Projects/VoleiClub-Front"
+		},
+		{
+			"path": "../Projects/zap-sender-back"
+		},
+		{
+			"path": "../Projects/zap-sender-plugin"
+		},
+		{
+			"path": "../Projects/zsh-map"
+		},
+		{
+			"path": "../Projects/zshmap-extras"
+		},
+		{
+			"path": "../Projects/LandingPage-BackEnd-VoleiClub"
+		},
+		{
+			"path": "../Projects/LandingPage-FrontEnd-VoleiClub"
+		}
+	]
+}

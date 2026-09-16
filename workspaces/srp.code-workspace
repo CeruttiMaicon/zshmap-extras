@@ -1,0 +1,41 @@
+{
+	"folders": [
+		{
+			"path": "../Projects/front"
+		},
+		{
+			"path": "../Projects/srp"
+		},
+		{
+			"path": "../Projects/srp-deploy"
+		}
+	],
+  "settings": {
+    "extensions.ignoreRecommendations": true,
+    "files.associations": {
+      "*.css": "postcss",
+      ".husky/commit-msg": "shellscript",
+      ".husky/pre-commit": "shellscript",
+      ".husky/pre-push": "shellscript",
+      ".importsortrc": "json",
+      ".markdownlintignore": "ignore"
+    },
+    "git.autorefresh": true,
+    "git.ignoreLimitWarning": true,
+    "json.format.enable": true,
+    "material-icon-theme.activeIconPack": "vue",
+    "material-icon-theme.folders.associations": {
+      "composables": "include",
+      "datasource": "server",
+      "mappers": "mappings",
+      "rest": "api",
+      "store": "vuex-store"
+    },
+    "material-icon-theme.files.associations": {
+      "vite.config.*.js": "vite",
+      "vite.config.*.mjs": "vite",
+      "vite.config.*.cjs": "vite",
+      "vite.config.*.ts": "vite"
+    }
+  }
+}

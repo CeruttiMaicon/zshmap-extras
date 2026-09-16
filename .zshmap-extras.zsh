@@ -65,6 +65,90 @@ alias LandingPageFront="clone_repo ~/Projects/LandingPage-FrontEnd-VoleiClub git
 alias MarketingHubPlugin="clone_repo ~/Projects/zap-sender-plugin git@github.com:Zoren-Software/zap-sender-plugin.git && cd ~/Projects/zap-sender-plugin"
 alias MarketingHubBack="clone_repo ~/Projects/zap-sender-back git@github.com:Zoren-Software/zap-sender-back.git && cd ~/Projects/zap-sender-back"
 
+# Workspaces (~/Workspaces/*.code-workspace)
+# Os .code-workspace ficam versionados em zshmap-extras/workspaces/ (paths
+# relativos, ex.: "../Projects/srp") e são sincronizados para ~/Workspaces
+# sempre que um atalho de workspace é chamado (recria a pasta/arquivo mesmo
+# que ~/Workspaces tenha sido apagada depois do terminal aberto).
+# Gera-se uma função por editor instalado para cada workspace encontrado,
+# ex.: ~/Workspaces/srp.code-workspace -> função code-srp e, se o Cursor
+# estiver instalado, também cursor-srp.
+function sincronizar_workspaces() {
+    local workspaces_repo_dir="$HOME/Projects/zshmap-extras/workspaces"
+    local workspaces_dir="$HOME/Workspaces"
+
+    if [[ ! -d "$workspaces_repo_dir" ]]; then
+        return
+    fi
+
+    mkdir -p "$workspaces_dir"
+
+    if command -v rsync &> /dev/null; then
+        rsync -a "$workspaces_repo_dir"/*.code-workspace "$workspaces_dir/" 2>/dev/null
+    else
+        cp -f "$workspaces_repo_dir"/*.code-workspace(N) "$workspaces_dir/" 2>/dev/null
+    fi
+}
+
+# Clona as pastas de projeto referenciadas num .code-workspace que ainda não
+# existam em ~/Projects. O mapa pasta->URL git é extraído dos próprios
+# aliases "clone_repo ~/Projects/<pasta> <url>" já definidos neste ficheiro
+# (linhas 51-66), então não há URLs duplicadas: um clone_repo novo já entra
+# automaticamente para uso em workspaces.
+function clonar_pastas_workspace() {
+    local workspace_file="$1"
+    local extras_file="$HOME/Projects/zshmap-extras/.zshmap-extras.zsh"
+    local pasta dir url linha
+
+    if [[ ! -f "$workspace_file" || ! -f "$extras_file" ]]; then
+        return
+    fi
+
+    for pasta in $(command grep -oE '"path": *"\.\./Projects/[^"]+"' "$workspace_file" | sed -E 's#.*Projects/([^"]+)"#\1#' | sort -u); do
+        dir="$HOME/Projects/$pasta"
+
+        if [[ -d "$dir" ]]; then
+            continue
+        fi
+
+        linha="$(command grep -m1 "clone_repo ~/Projects/${pasta} " "$extras_file")"
+        url="$(echo "$linha" | sed -E 's#.*clone_repo ~/Projects/'"$pasta"' +([^ ]+).*#\1#')"
+
+        if [[ -n "$url" ]]; then
+            echo -e "\033[0;36m📦 Pasta $dir não encontrada. Clonando $url...\033[0m"
+            git clone "$url" "$dir"
+        else
+            echo -e "\033[0;33m⚠️  Nenhum clone_repo mapeado para '$pasta'. Pulei o clone automático.\033[0m"
+        fi
+    done
+}
+
+function gerar_aliases_workspaces() {
+    local workspaces_repo_dir="$HOME/Projects/zshmap-extras/workspaces"
+    local workspaces_dir="$HOME/Workspaces"
+    local workspace_file nome editor
+
+    if [[ ! -d "$workspaces_repo_dir" ]]; then
+        return
+    fi
+
+    for workspace_file in "$workspaces_repo_dir"/*.code-workspace(N); do
+        nome="$(basename "$workspace_file" .code-workspace)"
+
+        for editor in code cursor; do
+            if command -v "$editor" &> /dev/null; then
+                eval "function ${editor}-${nome}() {
+                    sincronizar_workspaces
+                    clonar_pastas_workspace \"${workspaces_dir}/${nome}.code-workspace\"
+                    ${editor} \"${workspaces_dir}/${nome}.code-workspace\"
+                }"
+            fi
+        done
+    done
+}
+
+gerar_aliases_workspaces
+
 # Atalhos
 alias cl="clear"
 
