@@ -1,9 +1,11 @@
 {
 	"folders": [
 		{
+			"name": "ZshMap",
 			"path": "../Projects/zsh-map"
 		},
 		{
+			"name": "ZshMap Extras",
 			"path": "../Projects/zshmap-extras"
 		}
 	],

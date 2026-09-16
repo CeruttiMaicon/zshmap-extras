@@ -1,9 +1,11 @@
 {
 	"folders": [
 		{
+			"name": "MarketingHub Back",
 			"path": "../Projects/zap-sender-back"
 		},
 		{
+			"name": "MarketingHub Plugin",
 			"path": "../Projects/zap-sender-plugin"
 		}
 	]

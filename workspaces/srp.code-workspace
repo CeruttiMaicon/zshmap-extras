@@ -1,12 +1,15 @@
 {
 	"folders": [
 		{
+			"name": "SRP Front",
 			"path": "../Projects/front"
 		},
 		{
+			"name": "SRP",
 			"path": "../Projects/srp"
 		},
 		{
+			"name": "SRP Deploy",
 			"path": "../Projects/srp-deploy"
 		}
 	],

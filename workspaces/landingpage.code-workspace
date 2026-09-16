@@ -1,12 +1,15 @@
 {
 	"folders": [
 		{
+			"name": "LandingPage Back",
 			"path": "../Projects/LandingPage-BackEnd-VoleiClub"
 		},
 		{
+			"name": "LandingPage Front",
 			"path": "../Projects/LandingPage-FrontEnd-VoleiClub"
 		},
 		{
+			"name": "MarketingHub Plugin",
 			"path": "../Projects/zap-sender-plugin"
 		}
 	]

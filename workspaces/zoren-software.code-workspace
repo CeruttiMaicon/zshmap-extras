@@ -1,27 +1,35 @@
 {
 	"folders": [
 		{
+			"name": "VolleyTrack Back",
 			"path": "../Projects/VoleiClub"
 		},
 		{
+			"name": "VolleyTrack Front",
 			"path": "../Projects/VoleiClub-Front"
 		},
 		{
+			"name": "MarketingHub Back",
 			"path": "../Projects/zap-sender-back"
 		},
 		{
+			"name": "MarketingHub Plugin",
 			"path": "../Projects/zap-sender-plugin"
 		},
 		{
+			"name": "ZshMap",
 			"path": "../Projects/zsh-map"
 		},
 		{
+			"name": "ZshMap Extras",
 			"path": "../Projects/zshmap-extras"
 		},
 		{
+			"name": "LandingPage Back",
 			"path": "../Projects/LandingPage-BackEnd-VoleiClub"
 		},
 		{
+			"name": "LandingPage Front",
 			"path": "../Projects/LandingPage-FrontEnd-VoleiClub"
 		}
 	]
