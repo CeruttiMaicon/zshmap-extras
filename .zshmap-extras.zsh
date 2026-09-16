@@ -108,6 +108,7 @@ function clonar_pastas_workspace() {
         dir="$HOME/Projects/$pasta"
 
         if [[ -d "$dir" ]]; then
+            echo -e "\033[0;32m✅ Pasta $dir já existe.\033[0m"
             continue
         fi
 
