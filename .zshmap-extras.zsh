@@ -36,7 +36,6 @@ fi
 export sufixo="_masked"
 
 alias ohmyzsh="code ~/.oh-my-zsh"
-alias zshprofile="code ~/Projects/zsh-map/.zprofile"
 alias zshconfig="code ~/.zshrc"
 alias conf-neovim="code ~/.config/nvim/init.vim"
 alias conf-vim="code ~/.vimrc"
