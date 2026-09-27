@@ -31,6 +31,14 @@
 		{
 			"name": "LandingPage Front",
 			"path": "../Projects/LandingPage-FrontEnd-VoleiClub"
+		},
+		{
+			"name": "Cetti Back",
+			"path": "../Projects/cetti-back"
+		},
+		{
+			"name": "Cetti Front",
+			"path": "../Projects/cetti"
 		}
 	]
 }

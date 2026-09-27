@@ -63,6 +63,8 @@ alias LandingPageBack="clone_repo ~/Projects/LandingPage-BackEnd-VoleiClub git@g
 alias LandingPageFront="clone_repo ~/Projects/LandingPage-FrontEnd-VoleiClub git@github.com:Zoren-Software/LandingPage-FrontEnd-VoleiClub.git && cd ~/Projects/LandingPage-FrontEnd-VoleiClub"
 alias MarketingHubPlugin="clone_repo ~/Projects/zap-sender-plugin git@github.com:Zoren-Software/zap-sender-plugin.git && cd ~/Projects/zap-sender-plugin"
 alias MarketingHubBack="clone_repo ~/Projects/zap-sender-back git@github.com:Zoren-Software/zap-sender-back.git && cd ~/Projects/zap-sender-back"
+alias CettiBack="clone_repo ~/Projects/cetti-back git@github.com:Zoren-Software/cetti-back.git && cd ~/Projects/cetti-back"
+alias CettiFront="clone_repo ~/Projects/cetti git@github.com:Zoren-Software/cetti.git && cd ~/Projects/cetti"
 
 # Workspaces (~/Workspaces/*.code-workspace)
 # Os .code-workspace ficam versionados em zshmap-extras/workspaces/ (paths
