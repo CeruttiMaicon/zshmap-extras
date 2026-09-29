@@ -514,6 +514,9 @@ alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'
 alias p="pnpm"
 export PATH="$HOME/.local/share/pnpm:$PATH"
 
+# Claude Code
+export PATH="$HOME/.local/bin:$PATH"
+
 # Função para verificar e clonar repositório se necessário
 function clone_repo() {
     local dir=$1
