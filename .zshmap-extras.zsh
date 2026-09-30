@@ -517,6 +517,35 @@ export PATH="$HOME/.local/share/pnpm:$PATH"
 # Claude Code
 export PATH="$HOME/.local/bin:$PATH"
 
+# Compatibilidade para Ubuntu GNOME:
+# As versões recentes do Ubuntu substituíram o gedit pelo GNOME Text Editor
+# (gnome-text-editor). Este alias recria o comando "gedit" apenas quando:
+#   - O sistema é Ubuntu puro (ID=ubuntu)
+#   - O gedit não está instalado
+#   - O gnome-text-editor está disponível
+#
+# Uso:
+#   gedit arquivo.txt
+#
+# Observação:
+#   "sudo gedit" não funciona com aliases/funções do shell.
+#   Para editar arquivos do sistema, basta usar:
+#   gedit /etc/hosts
+#   O GNOME Text Editor solicitará autenticação ao salvar.
+ubuntu_only() {
+    [[ -r /etc/os-release ]] || return 1
+    source /etc/os-release
+    [[ "$ID" == "ubuntu" ]]
+}
+
+if ubuntu_only \
+   && ! command -v gedit >/dev/null 2>&1 \
+   && command -v gnome-text-editor >/dev/null 2>&1; then
+
+    alias gedit='gnome-text-editor'
+
+fi
+
 # Função para verificar e clonar repositório se necessário
 function clone_repo() {
     local dir=$1
@@ -541,6 +570,8 @@ eval "$(starship init zsh)"
 
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+# Terminais que herdam PATH (ex.: VS Code) mantêm o Node antigo; força o default do nvm (22, Node 26 quebra o localStorage do jsdom nos testes do front)
+command -v nvm >/dev/null && nvm use default --silent >/dev/null
 
 # Variáveis de ambiente do Go
 export GOROOT=/usr/local/go
