@@ -5,6 +5,10 @@
 # Requisitos:
 #   - 1Password (app desktop) instalado, com "SSH Agent" ativado
 #     (Settings > Developer > Use the SSH Agent) e desbloqueado
+#   - ou, numa máquina acedida por SSH (ex.: mercurio), entrar com agente
+#     encaminhado (ssh -A) a partir de uma máquina com o 1Password
+#
+# Idempotente: pode correr várias vezes (mantém a user.signingkey existente).
 #
 # Variáveis opcionais:
 #   GIT_SIGNING_KEY  chave pública a usar (ex.: "ssh-ed25519 AAAA...")
@@ -20,6 +24,8 @@ if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; th
         GIT_SIGNING_KEY="$GIT_SIGNING_KEY" \
         GIT_USER_NAME="$GIT_USER_NAME" \
         GIT_USER_EMAIL="$GIT_USER_EMAIL" \
+        SSH_CONNECTION="$SSH_CONNECTION" \
+        SSH_AUTH_SOCK="$SSH_AUTH_SOCK" \
         sh "$0" "$@"
 fi
 
@@ -29,6 +35,15 @@ OP_SSH_SIGN="/opt/1Password/op-ssh-sign"
 OP_AGENT_SOCK="$HOME/.1password/agent.sock"
 SSH_CONFIG="$HOME/.ssh/config"
 ALLOWED_SIGNERS="$HOME/.ssh/allowed_signers"
+SIGN_WRAPPER="$HOME/.local/bin/git-ssh-sign"
+# O agente do 1Password só fora de sessões SSH; dentro delas o ssh usa o agente encaminhado
+SSH_MATCH_LINE='Match exec "test -z \"$SSH_CONNECTION\""'
+
+# Sessão SSH com agente encaminhado (ssh -A)?
+remote_agent=false
+if [ -n "$SSH_CONNECTION" ] && [ -S "${SSH_AUTH_SOCK:-}" ] && [ "$SSH_AUTH_SOCK" != "$OP_AGENT_SOCK" ]; then
+    remote_agent=true
+fi
 
 # Pergunta com valor por omissão (usa o default se não houver terminal)
 ask() {
@@ -50,18 +65,42 @@ if ! command -v git >/dev/null 2>&1; then
 fi
 
 if [ ! -x "$OP_SSH_SIGN" ]; then
-    echo "❌ $OP_SSH_SIGN não encontrado."
-    echo "   Instala o app desktop do 1Password (o 1password-cli sozinho não traz o op-ssh-sign)."
-    exit 1
+    if [ "$remote_agent" = true ]; then
+        echo "ℹ️  $OP_SSH_SIGN não encontrado: nesta máquina só vai assinar via agente encaminhado (ssh -A)."
+    else
+        echo "❌ $OP_SSH_SIGN não encontrado."
+        echo "   Instala o app desktop do 1Password (o 1password-cli sozinho não traz o op-ssh-sign)."
+        exit 1
+    fi
 fi
 
-# ~/.ssh/config: usar o agente do 1Password
+# ~/.ssh/config: usar o agente do 1Password (exceto em sessões SSH)
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
-if [ -f "$SSH_CONFIG" ] && grep -q "1password/agent.sock" "$SSH_CONFIG"; then
+if [ -f "$SSH_CONFIG" ] && grep -qxF "$SSH_MATCH_LINE" "$SSH_CONFIG"; then
     echo "ℹ️  ~/.ssh/config já usa o agente do 1Password."
+elif [ -f "$SSH_CONFIG" ] && grep -q "1password/agent.sock" "$SSH_CONFIG"; then
+    # Versões antigas deste script usavam "Host *", que forçava o 1Password até em sessões SSH
+    backup="$SSH_CONFIG.bak-$(date +%Y%m%d%H%M%S)"
+    cp "$SSH_CONFIG" "$backup"
+    M="$SSH_MATCH_LINE" awk '
+        pending && /^[ \t]*IdentityAgent[ \t]+~\/\.1password\/agent\.sock[ \t]*$/ {
+            print ENVIRON["M"]; print; pending = 0; next
+        }
+        pending { print held; pending = 0 }
+        $0 == "Host *" { held = $0; pending = 1; next }
+        { print }
+        END { if (pending) print held }
+    ' "$backup" > "$SSH_CONFIG"
+    chmod 600 "$SSH_CONFIG"
+    if grep -qxF "$SSH_MATCH_LINE" "$SSH_CONFIG"; then
+        echo "✅ ~/.ssh/config: agente do 1Password só fora de sessões SSH (backup em $backup)"
+    else
+        echo "⚠️  ~/.ssh/config usa o 1Password num formato não reconhecido; ajusta à mão para:"
+        printf '   %s\n   \tIdentityAgent ~/.1password/agent.sock\n' "$SSH_MATCH_LINE"
+    fi
 else
-    printf 'Host *\n\tIdentityAgent ~/.1password/agent.sock\n' >> "$SSH_CONFIG"
+    printf '%s\n\tIdentityAgent ~/.1password/agent.sock\n' "$SSH_MATCH_LINE" >> "$SSH_CONFIG"
     chmod 600 "$SSH_CONFIG"
     echo "✅ IdentityAgent do 1Password adicionado ao ~/.ssh/config"
 fi
@@ -79,16 +118,25 @@ if [ -z "$email" ]; then
 fi
 echo "ℹ️  Autor: $name <$email>"
 
-# Chave de assinatura
+# Chave de assinatura (mantém a já configurada)
 key="$GIT_SIGNING_KEY"
 if [ -z "$key" ]; then
-    if [ ! -S "$OP_AGENT_SOCK" ]; then
+    key="$(git config --global user.signingkey || true)"
+    if [ -n "$key" ]; then
+        echo "ℹ️  Mantendo a user.signingkey já configurada."
+    fi
+fi
+if [ -z "$key" ]; then
+    agent_sock="$OP_AGENT_SOCK"
+    if [ "$remote_agent" = true ]; then
+        agent_sock="$SSH_AUTH_SOCK"
+    elif [ ! -S "$OP_AGENT_SOCK" ]; then
         echo "❌ Agente SSH do 1Password não encontrado em $OP_AGENT_SOCK."
         echo "   Abre o 1Password, ativa Settings > Developer > Use the SSH Agent e desbloqueia o cofre."
         exit 1
     fi
 
-    keys="$(SSH_AUTH_SOCK="$OP_AGENT_SOCK" ssh-add -L 2>/dev/null || true)"
+    keys="$(SSH_AUTH_SOCK="$agent_sock" ssh-add -L 2>/dev/null || true)"
     if [ -z "$keys" ] || ! echo "$keys" | grep -q '^ssh-'; then
         echo "❌ Nenhuma chave no agente do 1Password (está desbloqueado?)."
         exit 1
@@ -113,10 +161,26 @@ if [ -z "$key" ]; then
 fi
 echo "ℹ️  Chave: $(echo "$key" | cut -c1-30)..."
 
+# Programa de assinatura: op-ssh-sign localmente; ssh-keygen com o agente
+# encaminhado em sessões SSH (o op-ssh-sign só fala com o 1Password local)
+mkdir -p "$(dirname "$SIGN_WRAPPER")"
+cat > "$SIGN_WRAPPER" << 'EOF'
+#!/bin/sh
+# Gerado por zshmap-extras/programs/ubuntu/32-git-signing-1password.sh
+if [ -n "$SSH_CONNECTION" ] && [ -S "${SSH_AUTH_SOCK:-}" ] && [ "$SSH_AUTH_SOCK" != "$HOME/.1password/agent.sock" ]; then
+    exec ssh-keygen "$@"
+fi
+if [ -x /opt/1Password/op-ssh-sign ]; then
+    exec /opt/1Password/op-ssh-sign "$@"
+fi
+exec ssh-keygen "$@"
+EOF
+chmod 755 "$SIGN_WRAPPER"
+
 # Configuração do git
 git config --global gpg.format ssh
 git config --global user.signingkey "$key"
-git config --global gpg.ssh.program "$OP_SSH_SIGN"
+git config --global gpg.ssh.program "$SIGN_WRAPPER"
 git config --global commit.gpgsign true
 git config --global tag.gpgsign true
 
@@ -140,7 +204,8 @@ if git -C "$tmp" init -q && git -C "$tmp" commit -q --allow-empty -m "teste assi
     echo "✅ Commit assinado e verificado com sucesso!"
     result=0
 else
-    echo "❌ Falha ao assinar. Confere se o 1Password está aberto e desbloqueado."
+    echo "❌ Falha ao assinar. Confere se o 1Password está aberto e desbloqueado"
+    echo "   (por SSH: entra com ssh -A e corre o script sem sudo)."
     result=1
 fi
 rm -rf "$tmp"
