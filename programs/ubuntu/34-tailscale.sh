@@ -106,14 +106,44 @@ fi
 
 run systemctl enable --now tailscaled
 
+# O Docker liberta o CLI com `usermod -aG docker`. O Tailscale não tem
+# grupo equivalente: só o utilizador operador corre `tailscale` sem sudo.
+# No menu do ZshMap o script corre como root, por isso o utilizador é SUDO_USER.
+operator=""
+if [ "$(id -u)" -eq 0 ]; then
+    operator="${SUDO_USER:-}"
+else
+    operator=$(id -un)
+fi
+if [ -z "$operator" ] || [ "$operator" = "root" ] || ! id "$operator" >/dev/null 2>&1; then
+    echo "Aviso: não foi possível identificar o utilizador para operar o Tailscale sem sudo."
+    operator=""
+fi
+
 status_json=$(run tailscale status --json 2>/dev/null || true)
 backend_state=$(printf '%s\n' "$status_json" | sed -n 's/.*"BackendState"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
 
 if [ "$backend_state" = "Running" ]; then
     echo "Tailscale já está conectado."
+    if [ -n "$operator" ]; then
+        run tailscale set --operator "$operator"
+    fi
 else
     echo "A abrir o login do Tailscale. Usa o link abaixo no browser."
-    run tailscale up
+    if [ -n "$operator" ]; then
+        run tailscale up --operator "$operator"
+    else
+        run tailscale up
+    fi
+fi
+
+if [ -n "$operator" ]; then
+    operator_atual=$(run tailscale debug prefs 2>/dev/null | sed -n 's/.*"OperatorUser"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1 || true)
+    if [ "$operator_atual" != "$operator" ]; then
+        echo "Erro: o Tailscale continua a exigir sudo para $operator."
+        exit 1
+    fi
+    echo "O utilizador $operator pode correr tailscale sem sudo."
 fi
 
 echo "IPv4 Tailscale:"
