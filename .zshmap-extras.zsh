@@ -578,5 +578,20 @@ export GOROOT=/usr/local/go
 export GOPATH=$HOME/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
-# Configuração assinatura commits 1Password
-echo 'export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"' >> ~/.zshrc
+# Agente SSH do 1Password (assinatura de commits)
+# Versões antigas deste ficheiro acrescentavam esta linha ao ~/.zshrc a cada shell: remove-as (com backup)
+_zshmap_old_sock_line='export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"'
+if [ -f ~/.zshrc ] && grep -qxF "$_zshmap_old_sock_line" ~/.zshrc; then
+    # mv (e não reescrita no lugar): o zsh ainda está a ler o ~/.zshrc atual
+    _zshmap_zshrc="$(readlink -f ~/.zshrc)"
+    cp "$_zshmap_zshrc" "$_zshmap_zshrc.bak-ssh-auth-sock-$(date +%Y%m%d%H%M%S)" \
+        && grep -vxF "$_zshmap_old_sock_line" "$_zshmap_zshrc" > "$_zshmap_zshrc.tmp" \
+        && mv "$_zshmap_zshrc.tmp" "$_zshmap_zshrc" \
+        && echo "🧹 Removidas linhas SSH_AUTH_SOCK duplicadas do ~/.zshrc (abre um terminal novo)"
+    unset _zshmap_zshrc
+fi
+unset _zshmap_old_sock_line
+# Em sessões SSH com agente encaminhado (ssh -A), mantém o socket da sessão
+if [ -z "$SSH_CONNECTION" ] || [ ! -S "${SSH_AUTH_SOCK:-}" ]; then
+    export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
+fi
