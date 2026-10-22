@@ -8,13 +8,13 @@ scan_timeout = 50
 command_timeout = 800
 add_newline = false
 
-# 1ª linha: utilizador + diretório completo, stacks (sem git); $fill → duração/bateria à direita
+# 1ª linha: nome da máquina + diretório completo, stacks (sem git); $fill → duração/bateria à direita
 # 2ª linha: branch + estado do repositório + métricas + indicador de assinatura
 # 3ª linha: ╰─ + ❯; relógio à direita via RPROMPT (right_format)
 right_format = "$time"
 
 format = """
-$os${custom.path_display}${custom.laravel}$package${custom.nodejs}$rust$golang$php${custom.php-local}${custom.php-project}${custom.docker-compose}$docker_context$fill$cmd_duration$battery${vcs}
+$os$hostname${custom.path_display}${custom.laravel}$package${custom.nodejs}$rust$golang$php${custom.php-local}${custom.php-project}${custom.docker-compose}$docker_context$fill$cmd_duration$battery${vcs}
 [╰─](bold blue)$sudo$status$character"""
 
 [username]
@@ -24,10 +24,12 @@ style_user = "bold fg:39"
 style_root = "bold red"
 format = "[$user]($style)"
 
+# Nome da máquina sempre visível; em sessão SSH ganha o ícone 🌐
 [hostname]
 disabled = false
-format = "[@$hostname](bold 245) "
 ssh_only = false
+ssh_symbol = "🌐 "
+format = "[$ssh_symbol$hostname](bold blue) "
 
 [os]
 disabled = false
