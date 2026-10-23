@@ -8,13 +8,13 @@ scan_timeout = 50
 command_timeout = 800
 add_newline = false
 
-# 1ª linha: nome da máquina + diretório completo, stacks (sem git); $fill → duração/bateria à direita
-# 2ª linha: branch + estado do repositório + métricas + indicador de assinatura
-# 3ª linha: ╰─ + ❯; relógio à direita via RPROMPT (right_format)
-right_format = "$time"
-
+# 1ª linha: nome da máquina (📍 local / 🌐 SSH); $fill → relógio à direita, sempre
+# 2ª linha: diretório completo, stacks (sem git); $fill → duração/bateria à direita
+# 3ª linha: branch + estado do repositório + métricas + indicador de assinatura
+# 4ª linha: ╰─ + ❯
 format = """
-$os$hostname${custom.path_display}${custom.laravel}$package${custom.nodejs}$rust$golang$php${custom.php-local}${custom.php-project}${custom.docker-compose}$docker_context$fill$cmd_duration$battery${vcs}
+$os${custom.host-local}$hostname$fill$time
+[│](bold blue) ${custom.path_display}${custom.laravel}$package${custom.nodejs}$rust$golang$php${custom.php-local}${custom.php-project}${custom.docker-compose}$docker_context$fill$cmd_duration$battery${vcs}
 [╰─](bold blue)$sudo$status$character"""
 
 [username]
@@ -24,7 +24,7 @@ style_user = "bold fg:39"
 style_root = "bold red"
 format = "[$user]($style)"
 
-# Nome da máquina sempre visível; em sessão SSH ganha o ícone 🌐
+# Nome da máquina sempre visível; em sessão SSH ganha o ícone 🌐 (local: 📍 via custom.host-local)
 [hostname]
 disabled = false
 ssh_only = false
@@ -35,6 +35,17 @@ format = "[$ssh_symbol$hostname](bold blue) "
 disabled = false
 style = "bold blue"
 format = "[╭─](bold blue) "
+
+# Ícone 📍 antes do nome da máquina quando a sessão é local.
+# Usa a mesma variável que o módulo hostname para detetar SSH (SSH_CONNECTION),
+# para nunca aparecerem os dois ícones ao mesmo tempo.
+[custom.host-local]
+description = "Ícone de sessão local (fora de SSH)"
+shell = ["bash", "--noprofile", "-c"]
+use_stdin = false
+when = '[[ -z "${SSH_CONNECTION:-}" ]]'
+command = "printf '📍'"
+format = "$output "
 
 [package]
 format = "📦 [$version]($style) "
